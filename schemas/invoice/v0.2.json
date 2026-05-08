@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mxd-standard.org/schemas/invoice/v0.2.json",
+  "title": "MXD Invoice Schema",
+  "description": "JSON Schema for Layer 2 of an MXD invoice document. Version 0.2.",
+  "type": "object",
+  "required": ["$mxd", "invoice", "sender", "recipient", "line_items", "totals"],
+  "properties": {
+    "$schema": { "type": "string", "format": "uri" },
+    "$mxd": {
+      "type": "object",
+      "required": ["version", "type", "uuid", "created"],
+      "properties": {
+        "version":              { "type": "string", "const": "0.2" },
+        "type":                 { "type": "string", "const": "invoice" },
+        "uuid":                 { "type": "string" },
+        "created":              { "type": "string", "format": "date-time" },
+        "modified":             { "type": ["string", "null"], "format": "date-time" },
+        "generator":            { "type": ["string", "null"] },
+        "regulatory_standard":  { "type": "string", "enum": ["UBL-2.1","PEPPOL-BIS-3.0","FACTURX-1.0","CII-D16B","FATTURAPA-1.2","NONE"] },
+        "regulatory_country":   { "type": ["string", "null"] },
+        "regulatory_profile":   { "type": ["string", "null"] },
+        "locale":               { "type": ["string", "null"] },
+        "currency":             { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "invoice": {
+      "type": "object",
+      "required": ["number", "status", "issued_date", "due_date"],
+      "properties": {
+        "number":            { "type": "string" },
+        "status":            { "type": "string", "enum": ["draft","unpaid","paid","overdue","cancelled","disputed"] },
+        "issued_date":       { "type": "string", "format": "date" },
+        "due_date":          { "type": "string", "format": "date" },
+        "payment_terms":     { "type": ["string", "null"] },
+        "po_reference":      { "type": ["string", "null"] },
+        "project_reference": { "type": ["string", "null"] },
+        "quote_ref":         { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "sender": {
+      "type": "object",
+      "required": ["name", "email"],
+      "properties": {
+        "name":        { "type": "string" },
+        "email":       { "type": "string", "format": "email" },
+        "phone":       { "type": ["string", "null"] },
+        "website":     { "type": ["string", "null"] },
+        "address":     { "$ref": "#/$defs/address" },
+        "tax_id":      { "type": ["string", "null"] },
+        "vat_number":  { "type": ["string", "null"] },
+        "peppol_id":   { "type": ["string", "null"] },
+        "logo_base64": { "type": ["string", "null"] },
+        "logo_url":    { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "recipient": {
+      "type": "object",
+      "required": ["name", "email"],
+      "properties": {
+        "name":           { "type": "string" },
+        "email":          { "type": "string", "format": "email" },
+        "contact_person": { "type": ["string", "null"] },
+        "address":        { "$ref": "#/$defs/address" },
+        "tax_id":         { "type": ["string", "null"] },
+        "vat_number":     { "type": ["string", "null"] },
+        "peppol_id":      { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "line_items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "quantity", "unit_price", "subtotal"],
+        "properties": {
+          "id":           { "type": "string" },
+          "description":  { "type": "string" },
+          "category":     { "type": ["string", "null"] },
+          "quantity":     { "type": "number", "minimum": 0 },
+          "unit":         { "type": ["string", "null"] },
+          "unit_price":   { "type": "number", "minimum": 0 },
+          "discount_pct": { "type": "number", "minimum": 0, "maximum": 100, "default": 0 },
+          "tax_rate":     { "type": "number", "minimum": 0, "maximum": 1 },
+          "tax_category": { "type": ["string", "null"], "enum": ["S","Z","E","AE","K","G","O","L","M",null] },
+          "subtotal":     { "type": "number", "minimum": 0 },
+          "smart_tags":   { "type": "array", "items": { "type": "string" } },
+          "item_ref":     { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["subtotal", "tax_total", "total", "amount_due"],
+      "properties": {
+        "subtotal":       { "type": "number", "minimum": 0 },
+        "discount_total": { "type": "number", "minimum": 0 },
+        "tax_total":      { "type": "number", "minimum": 0 },
+        "total":          { "type": "number", "minimum": 0 },
+        "amount_paid":    { "type": "number", "minimum": 0 },
+        "amount_due":     { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "payment": {
+      "type": ["object", "null"],
+      "properties": {
+        "methods": { "type": "array", "items": { "type": "string" } },
+        "bank": {
+          "type": ["object", "null"],
+          "properties": {
+            "account_name":   { "type": ["string", "null"] },
+            "iban":           { "type": ["string", "null"] },
+            "account_number": { "type": ["string", "null"] },
+            "routing":        { "type": ["string", "null"] },
+            "swift":          { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "stripe_link": { "type": ["string", "null"] },
+        "paypal_link": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "smart_tags":     { "type": "array", "items": { "type": "string" } },
+    "reminders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trigger", "channel", "sent"],
+        "properties": {
+          "trigger":  { "type": "string", "enum": ["due_minus_7d","due_minus_3d","due_minus_1d","due_plus_1d","due_plus_7d","due_plus_14d","due_plus_30d"] },
+          "channel":  { "type": "string", "enum": ["email","sms","webhook"] },
+          "sent":     { "type": "boolean" },
+          "sent_at":  { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "audit_trail": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event", "actor", "timestamp"],
+        "properties": {
+          "event":     { "type": "string", "enum": ["created","modified","sent","viewed","reminder_sent","status_changed","paid","partially_paid","overdue","disputed","cancelled","peppol_submitted","signature_added"] },
+          "actor":     { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "detail":    { "type": ["string", "null"] },
+          "prev_hash": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notes":         { "type": ["string", "null"] },
+    "internal_memo": { "type": ["string", "null"] },
+    "attachments":   { "type": "array" },
+    "custom_fields": { "type": "object" }
+  },
+  "$defs": {
+    "address": {
+      "type": ["object", "null"],
+      "properties": {
+        "street":  { "type": ["string", "null"] },
+        "city":    { "type": ["string", "null"] },
+        "state":   { "type": ["string", "null"] },
+        "zip":     { "type": ["string", "null"] },
+        "country": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
