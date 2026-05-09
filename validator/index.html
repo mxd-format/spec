@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MXD Validator — mxd-standard.org</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222638;
+      --border: #2e3248;
+      --text: #e8eaf6;
+      --muted: #7b82a8;
+      --accent: #6c63ff;
+      --accent2: #4ecca3;
+      --green: #4ecca3;
+      --red: #ff6b6b;
+      --yellow: #ffd166;
+      --radius: 10px;
+      --mono: "JetBrains Mono", "Fira Code", monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .logo-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: .65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+      letter-spacing: .05em;
+    }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .85rem;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 3.5rem 1rem 2.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: .75rem;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: .95rem;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* ── DROP ZONE ── */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: var(--surface);
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: #1e1f35;
+    }
+    .dropzone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .drop-title { font-size: 1rem; font-weight: 600; margin-bottom: .4rem; }
+    .drop-sub { font-size: .82rem; color: var(--muted); }
+    .drop-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: .45rem 1.2rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      font-size: .85rem;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    /* ── OR PASTE ── */
+    .or-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: var(--muted);
+      font-size: .8rem;
+      margin-bottom: 1.5rem;
+    }
+    .or-divider::before, .or-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .78rem;
+      padding: 1rem;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+      transition: border-color .2s;
+      margin-bottom: 1rem;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
+
+    .validate-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: .8rem;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+      margin-bottom: 2rem;
+    }
+    .validate-btn:hover { opacity: .9; }
+    .validate-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── RESULTS ── */
+    #results { display: none; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 1.2rem 1.5rem;
+      border-radius: var(--radius) var(--radius) 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+    .result-header.valid   { background: #0d2318; border-color: #1e4d35; }
+    .result-header.invalid { background: #2a1111; border-color: #5a2020; }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 99px;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .status-pill.valid   { background: #1a4a30; color: var(--green); }
+    .status-pill.invalid { background: #4a1a1a; color: var(--red); }
+
+    .result-meta { color: var(--muted); font-size: .82rem; margin-left: auto; }
+
+    .checks-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: .75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      font-size: .85rem;
+      line-height: 1.5;
+    }
+    .check-row:last-child { border-bottom: none; }
+    .check-row.pass .icon { color: var(--green); }
+    .check-row.fail .icon { color: var(--red); }
+    .check-row.warn .icon { color: var(--yellow); }
+    .check-row.fail { background: #1f0f0f; }
+    .icon { font-size: .9rem; margin-top: 1px; flex-shrink: 0; width: 16px; }
+
+    /* ── LAYER TABS ── */
+    .layers-section { margin-top: 1.5rem; }
+    .layers-title { font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; }
+
+    .tab-bar { display: flex; gap: 2px; background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; border: 1px solid var(--border); border-bottom: none; overflow: hidden; }
+    .tab {
+      padding: .6rem 1.1rem;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-content {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 1.25rem 1.5rem;
+      font-family: var(--mono);
+      font-size: .78rem;
+      line-height: 1.6;
+      color: #a8b4d8;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .tab-content.active { display: block; }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      flex: 1;
+      min-width: 100px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem;
+    }
+    .stat-val { font-size: 1.5rem; font-weight: 700; }
+    .stat-val.green { color: var(--green); }
+    .stat-val.red   { color: var(--red); }
+    .stat-val.yellow{ color: var(--yellow); }
+    .stat-lbl { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#">
+    <span>MXD</span>
+    <span class="logo-badge">v0.2</span>
+    <span style="color:var(--muted);font-weight:400">Validator</span>
+  </a>
+  <div class="nav-links">
+    <a href="https://github.com/mxd-format/spec">Spec</a>
+    <a href="https://github.com/mxd-format/spec/blob/main/schemas/invoice/v0.2.json">Schema</a>
+    <a href="https://github.com/mxd-format/spec/blob/main/examples/invoice-minimal.mxd">Example</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>MXD Format Validator</h1>
+  <p>Validate any <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:.85em">.mxd</code> file. Checks all four layers — HTML structure, JSON schema, regulatory XML, and signature integrity.</p>
+</div>
+
+<div class="main">
+
+  <!-- Drop zone -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".mxd,.html" />
+    <div class="drop-icon">📄</div>
+    <div class="drop-title">Drop your .mxd file here</div>
+    <div class="drop-sub">or click to browse</div>
+    <div class="drop-btn">Choose file</div>
+  </div>
+
+  <div class="or-divider">or paste MXD content</div>
+
+  <textarea id="pasteArea" placeholder="Paste the contents of an .mxd file here..."></textarea>
+
+  <button class="validate-btn" id="validateBtn">
+    <span>⚡</span> Validate
+  </button>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="stats-bar" id="statsBar"></div>
+    <div class="result-header" id="resultHeader">
+      <span class="status-pill" id="statusPill"></span>
+      <span id="docMeta" style="font-size:.85rem;color:var(--muted)"></span>
+      <span class="result-meta" id="resultMeta"></span>
+    </div>
+    <div class="checks-panel" id="checksPanel"></div>
+
+    <div class="layers-section">
+      <div class="layers-title">Layers</div>
+      <div class="tab-bar" id="tabBar">
+        <div class="tab active" data-tab="json">Layer 2 — MXD JSON</div>
+        <div class="tab" data-tab="xml">Layer 3 — Regulatory XML</div>
+        <div class="tab" data-tab="sig">Layer 4 — Signature</div>
+      </div>
+      <div class="tab-content active" id="tab-json"></div>
+      <div class="tab-content" id="tab-xml"></div>
+      <div class="tab-content" id="tab-sig"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  MXD Format Specification v0.2 &nbsp;·&nbsp;
+  <a href="https://github.com/mxd-format/spec">github.com/mxd-format/spec</a>
+  &nbsp;·&nbsp; CC BY 4.0
+</footer>
+
+<script>
+// ── SHA-256 (native Web Crypto) ───────────────────────────────────────────
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+// ── Parser ────────────────────────────────────────────────────────────────
+function parseLayersFromHTML(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  return {
+    doc,
+    mxdType:    doc.documentElement.getAttribute("data-mxd-type"),
+    mxdVersion: doc.documentElement.getAttribute("data-mxd-version"),
+    jsonRaw:    doc.getElementById("mxd-data")?.textContent?.trim() || null,
+    xmlRaw:     doc.getElementById("mxd-regulatory")?.textContent?.trim() || null,
+    sigRaw:     doc.getElementById("mxd-signature")?.textContent?.trim() || null,
+  };
+}
+
+// ── Minimal schema check ──────────────────────────────────────────────────
+function schemaCheck(data) {
+  const errs = [];
+  if (!data.$mxd)           errs.push("Missing $mxd object");
+  if (data.$mxd?.version !== "0.2") errs.push(`$mxd.version must be "0.2" (got "${data.$mxd?.version}")`);
+  if (data.$mxd?.type !== "invoice") errs.push(`$mxd.type must be "invoice" (got "${data.$mxd?.type}")`);
+  if (!data.$mxd?.uuid)     errs.push("Missing $mxd.uuid");
+  if (!data.$mxd?.created)  errs.push("Missing $mxd.created");
+  if (!data.invoice)        errs.push("Missing invoice object");
+  if (!data.invoice?.number)errs.push("Missing invoice.number");
+  const validStatuses = ["draft","unpaid","paid","overdue","cancelled","disputed"];
+  if (!validStatuses.includes(data.invoice?.status)) errs.push(`invoice.status invalid (got "${data.invoice?.status}")`);
+  if (!data.invoice?.issued_date) errs.push("Missing invoice.issued_date");
+  if (!data.invoice?.due_date)    errs.push("Missing invoice.due_date");
+  if (!data.sender?.name)   errs.push("Missing sender.name");
+  if (!data.sender?.email)  errs.push("Missing sender.email");
+  if (!data.recipient?.name)  errs.push("Missing recipient.name");
+  if (!data.recipient?.email) errs.push("Missing recipient.email");
+  if (!Array.isArray(data.line_items) || data.line_items.length === 0) errs.push("line_items must be a non-empty array");
+  if (!data.totals)         errs.push("Missing totals object");
+  if (data.totals?.subtotal === undefined) errs.push("Missing totals.subtotal");
+  if (data.totals?.amount_due === undefined) errs.push("Missing totals.amount_due");
+  return errs;
+}
+
+// ── Math check ────────────────────────────────────────────────────────────
+function mathCheck(data) {
+  const errs = [];
+  for (const li of (data.line_items || [])) {
+    const exp = li.quantity * li.unit_price * (1 - (li.discount_pct||0)/100);
+    if (Math.abs(exp - li.subtotal) > 0.01)
+      errs.push(`Line ${li.id}: expected subtotal ${exp.toFixed(2)}, got ${li.subtotal}`);
+  }
+  const t = data.totals || {};
+  const expTotal = (t.subtotal||0) - (t.discount_total||0) + (t.tax_total||0);
+  if (Math.abs(expTotal - (t.total||0)) > 0.01)
+    errs.push(`totals.total mismatch: expected ${expTotal.toFixed(2)}, got ${t.total}`);
+  const expDue = (t.total||0) - (t.amount_paid||0);
+  if (Math.abs(expDue - (t.amount_due||0)) > 0.01)
+    errs.push(`totals.amount_due mismatch: expected ${expDue.toFixed(2)}, got ${t.amount_due}`);
+  return errs;
+}
+
+// ── Main validate ─────────────────────────────────────────────────────────
+async function validate(content) {
+  const checks = []; // { type: pass|fail|warn, text }
+  const p = (t) => checks.push({type:"pass", text:t});
+  const f = (t) => checks.push({type:"fail", text:t});
+  const w = (t) => checks.push({type:"warn", text:t});
+
+  const { doc, mxdType, mxdVersion, jsonRaw, xmlRaw, sigRaw } = parseLayersFromHTML(content);
+
+  // Check 1: HTML attributes
+  if (mxdType && mxdVersion) {
+    p(`HTML: data-mxd-type="${mxdType}"  data-mxd-version="${mxdVersion}"`);
+  } else {
+    f(`HTML: missing data-mxd-type or data-mxd-version on <html>`);
+  }
+
+  // Check 2: Layer 2 presence
+  if (!jsonRaw) { f("Layer 2: <script id='mxd-data'> not found"); return { checks, valid: false, jsonData: null, xmlRaw, sigRaw }; }
+  p("Layer 2: <script id='mxd-data' type='application/mxd+json'> found");
+
+  // Check 3: JSON parse
+  let jsonData;
+  try {
+    jsonData = JSON.parse(jsonRaw);
+    p("Layer 2: valid JSON ✓");
+  } catch(e) {
+    f(`Layer 2: JSON parse error — ${e.message}`);
+    return { checks, valid: false, jsonData: null, xmlRaw, sigRaw };
+  }
+
+  // Check 4: Schema
+  const schemaErrs = schemaCheck(jsonData);
+  if (schemaErrs.length === 0) {
+    p("Layer 2: passes MXD invoice schema v0.2 ✓");
+  } else {
+    schemaErrs.forEach(e => f(`Schema: ${e}`));
+  }
+
+  // Check 5: Math
+  const mathErrs = mathCheck(jsonData);
+  if (mathErrs.length === 0) {
+    p("Totals & line items: math correct ✓");
+  } else {
+    mathErrs.forEach(e => f(`Math: ${e}`));
+  }
+
+  // Check 6: Regulatory standard consistency
+  const std = jsonData.$mxd?.regulatory_standard;
+  const validStds = ["UBL-2.1","PEPPOL-BIS-3.0","FACTURX-1.0","CII-D16B","FATTURAPA-1.2","NONE"];
+  if (!std) {
+    w("$mxd.regulatory_standard not set");
+  } else if (!validStds.includes(std)) {
+    f(`$mxd.regulatory_standard "${std}" is not a recognised value`);
+  } else {
+    p(`Regulatory standard declared: ${std}`);
+  }
+
+  // Check 7: Layer 3
+  if (!xmlRaw) {
+    w("Layer 3: <script id='mxd-regulatory'> not found (regulatory XML recommended)");
+  } else if (std && std !== "NONE" && xmlRaw.includes("REGULATORY_STANDARD: NONE")) {
+    w(`Layer 3: standard declared as "${std}" but layer appears empty`);
+  } else {
+    p(`Layer 3: regulatory XML layer present`);
+    if (xmlRaw.includes("<!--") && xmlRaw.includes("-->")) {
+      p("Layer 3: XML correctly wrapped in HTML comment ✓");
+    } else if (std !== "NONE") {
+      w("Layer 3: XML should be wrapped in <!-- --> inside the script tag");
+    }
+  }
+
+  // Check 8: Layer 4
+  let sigData = null;
+  if (!sigRaw) {
+    w("Layer 4: <script id='mxd-signature'> not found (signature recommended)");
+  } else {
+    try {
+      sigData = JSON.parse(sigRaw);
+      p("Layer 4: signature block found and valid JSON ✓");
+
+      // Check hashes
+      if (sigData.json_layer_hash?.startsWith("REPLACE")) {
+        w("Signature: placeholder hashes — file has not been signed yet");
+      } else {
+        const computedJson = await sha256(jsonRaw);
+        const computedXml  = await sha256(xmlRaw || "");
+        const computedComb = await sha256(computedJson + computedXml);
+
+        if (sigData.json_layer_hash === computedJson) p("Signature: JSON layer hash verified ✓");
+        else f("Signature: JSON layer hash MISMATCH — file may have been tampered with");
+
+        if (sigData.xml_layer_hash === computedXml) p("Signature: XML layer hash verified ✓");
+        else f("Signature: XML layer hash MISMATCH");
+
+        if (sigData.combined_hash === computedComb) p("Signature: combined hash verified ✓");
+        else f("Signature: combined hash MISMATCH");
+
+        if (sigData.timestamp?.tsa_token) p("Signature: RFC 3161 timestamp token present");
+        else w("Signature: no RFC 3161 timestamp (Pro tier feature)");
+
+        if (sigData.sender_signature?.value) p("Signature: X.509 sender signature present");
+      }
+    } catch(e) {
+      f(`Layer 4: signature block JSON parse error — ${e.message}`);
+    }
+  }
+
+  // Check 9: Audit trail
+  const trail = jsonData.audit_trail || [];
+  if (trail.length === 0) {
+    w("Audit trail: empty");
+  } else if (trail[0].prev_hash !== null) {
+    f("Audit trail: first entry prev_hash must be null");
+  } else {
+    p(`Audit trail: ${trail.length} entr${trail.length===1?"y":"ies"}, chain origin valid ✓`);
+  }
+
+  const errors = checks.filter(c => c.type === "fail").length;
+  return { checks, valid: errors === 0, jsonData, jsonRaw, xmlRaw, sigRaw, sigData };
+}
+
+// ── Render results ────────────────────────────────────────────────────────
+function renderResults(r, filename) {
+  document.getElementById("results").style.display = "block";
+
+  // Stats bar
+  const passes = r.checks.filter(c=>c.type==="pass").length;
+  const fails  = r.checks.filter(c=>c.type==="fail").length;
+  const warns  = r.checks.filter(c=>c.type==="warn").length;
+  document.getElementById("statsBar").innerHTML = `
+    <div class="stat-card"><div class="stat-val green">${passes}</div><div class="stat-lbl">Passed</div></div>
+    <div class="stat-card"><div class="stat-val red">${fails}</div><div class="stat-lbl">Failed</div></div>
+    <div class="stat-card"><div class="stat-val yellow">${warns}</div><div class="stat-lbl">Warnings</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--muted)">${r.checks.length}</div><div class="stat-lbl">Total checks</div></div>
+  `;
+
+  // Header
+  const hdr = document.getElementById("resultHeader");
+  hdr.className = `result-header ${r.valid ? "valid" : "invalid"}`;
+  document.getElementById("statusPill").className = `status-pill ${r.valid?"valid":"invalid"}`;
+  document.getElementById("statusPill").innerHTML = r.valid ? "✓ &nbsp;VALID" : "✗ &nbsp;INVALID";
+
+  const inv = r.jsonData?.invoice;
+  document.getElementById("docMeta").textContent = inv
+    ? `${inv.number}  ·  ${r.jsonData?.sender?.name || ""}  →  ${r.jsonData?.recipient?.name || ""}  ·  ${r.jsonData?.$mxd?.currency || ""} ${r.jsonData?.totals?.amount_due ?? ""}`
+    : "";
+  document.getElementById("resultMeta").textContent = filename || "";
+
+  // Checks
+  const panel = document.getElementById("checksPanel");
+  panel.innerHTML = r.checks.map(c => {
+    const icon = c.type==="pass" ? "✓" : c.type==="fail" ? "✗" : "⚠";
+    return `<div class="check-row ${c.type}"><span class="icon">${icon}</span><span>${c.text}</span></div>`;
+  }).join("");
+
+  // Tabs
+  document.getElementById("tab-json").textContent = r.jsonRaw
+    ? JSON.stringify(JSON.parse(r.jsonRaw), null, 2)
+    : "(not found)";
+  document.getElementById("tab-xml").textContent  = r.xmlRaw || "(not found)";
+  document.getElementById("tab-sig").textContent  = r.sigRaw
+    ? JSON.stringify(JSON.parse(r.sigRaw), null, 2)
+    : "(not found)";
+
+  document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ── Event wiring ──────────────────────────────────────────────────────────
+const dropzone   = document.getElementById("dropzone");
+const fileInput  = document.getElementById("fileInput");
+const pasteArea  = document.getElementById("pasteArea");
+const validateBtn= document.getElementById("validateBtn");
+
+let loadedContent = null;
+let loadedFilename = null;
+
+fileInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    loadedContent = ev.target.result;
+    loadedFilename = file.name;
+    pasteArea.value = "";
+    dropzone.querySelector(".drop-title").textContent = `✓ ${file.name}`;
+    dropzone.style.borderColor = "var(--accent2)";
+  };
+  reader.readAsText(file);
+});
+
+dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("drag-over"); });
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag-over"));
+dropzone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropzone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    loadedContent = ev.target.result;
+    loadedFilename = file.name;
+    pasteArea.value = "";
+    dropzone.querySelector(".drop-title").textContent = `✓ ${file.name}`;
+    dropzone.style.borderColor = "var(--accent2)";
+  };
+  reader.readAsText(file);
+});
+
+validateBtn.addEventListener("click", async () => {
+  const content = loadedContent || pasteArea.value.trim();
+  if (!content) { alert("Please drop a file or paste MXD content first."); return; }
+  validateBtn.disabled = true;
+  validateBtn.innerHTML = "<span>⏳</span> Validating...";
+  try {
+    const result = await validate(content);
+    renderResults(result, loadedFilename);
+  } finally {
+    validateBtn.disabled = false;
+    validateBtn.innerHTML = "<span>⚡</span> Validate";
+  }
+});
+
+// Tab switching
+document.getElementById("tabBar").addEventListener("click", e => {
+  const tab = e.target.closest(".tab");
+  if (!tab) return;
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  tab.classList.add("active");
+  document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
+});
+</script>
+</body>
+</html>
